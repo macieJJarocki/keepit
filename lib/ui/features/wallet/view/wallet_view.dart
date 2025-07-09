@@ -1,3 +1,4 @@
+import 'package:barcode_widget/barcode_widget.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -22,44 +23,46 @@ class _WalletScreenState extends State<WalletScreen> {
     final viewModel = Provider.of<WalletViewModel>(context);
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            AppBar(
-              leading: IconButton(
-                onPressed: () => context.goNamed('home'),
-                icon: Icon(Icons.arrow_back_ios),
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => context.goNamed('home'),
+          icon: Icon(Icons.arrow_back_ios),
+        ),
+        actions: [
+          if (viewModel.cards.isNotEmpty)
+            TextButton.icon(
+              onPressed: () => context.goNamed('scanner'),
+              label: Text('Dodaj kartę'),
+              icon: Icon(Icons.add_circle),
+              style: ButtonStyle(
+                overlayColor: WidgetStateColor.transparent,
               ),
-              actions: [
-                TextButton.icon(
-                  onPressed: () => context.goNamed('scanner'),
-                  label: Text('Dodaj kartę'),
-                  icon: Icon(Icons.add_circle),
-                  style: ButtonStyle(
-                    overlayColor: WidgetStateColor.transparent,
-                  ),
-                ),
-              ],
             ),
-            Consumer<WalletViewModel>(
-              builder: (context, value, child) => CarouselSlider(
-                carouselController: controller,
-                options: CarouselOptions(
-                  height: 65.h,
-                  enableInfiniteScroll: false,
-                  enlargeCenterPage: true,
-                  onPageChanged: (nextIdx, reason) {
-                    setState(() {
-                      currentIdx = nextIdx;
-                    });
-                  },
-                ),
-                items: viewModel.cards.isEmpty
-                    ? [Text('No cards')]
-                    : List<Widget>.generate(
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: viewModel.cards.isNotEmpty
+            ? Column(
+                children: [
+                  Consumer<WalletViewModel>(
+                    builder: (context, value, child) => CarouselSlider(
+                      carouselController: controller,
+                      options: CarouselOptions(
+                        height: 65.h,
+                        enableInfiniteScroll: false,
+                        enlargeCenterPage: true,
+                        onPageChanged: (nextIdx, reason) {
+                          setState(() {
+                            currentIdx = nextIdx;
+                          });
+                        },
+                      ),
+                      items: List<Widget>.generate(
                         viewModel.cards.length,
                         (index) => Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 2),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 2,
+                          ),
                           child: Container(
                             color: index % 2 == 0 ? Colors.amber : Colors.red,
                             child: Padding(
@@ -67,7 +70,9 @@ class _WalletScreenState extends State<WalletScreen> {
                               child: Column(
                                 children: [
                                   ListTile(
-                                    title: Text(viewModel.cards[index].name),
+                                    title: Text(
+                                      viewModel.cards[index].name,
+                                    ),
                                     subtitle: Text(
                                       viewModel.cards[index].value,
                                     ),
@@ -98,9 +103,12 @@ class _WalletScreenState extends State<WalletScreen> {
                                   ),
                                   Center(
                                     child: SizedBox(
-                                      width: 20.h,
+                                      width: 30.h,
                                       height: 20.h,
-                                      child: Placeholder(),
+                                      child: BarcodeWidget(
+                                        data: viewModel.cards[index].value,
+                                        barcode: Barcode.ean13(),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -109,21 +117,33 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                         ),
                       ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 2.h),
+                    child: AnimatedSmoothIndicator(
+                      activeIndex: currentIdx,
+                      count: viewModel.cards.length,
+                      effect: SwapEffect(
+                        dotHeight: 1.h,
+                        dotWidth: 1.h,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                children: [
+                  TextButton.icon(
+                    onPressed: () => context.goNamed('scanner'),
+                    label: Text('Dodaj kartę'),
+                    icon: Icon(Icons.add_circle),
+                    style: ButtonStyle(
+                      overlayColor: WidgetStateColor.transparent,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 2.h),
-              child: AnimatedSmoothIndicator(
-                activeIndex: currentIdx,
-                count: viewModel.cards.length,
-                effect: SwapEffect(
-                  dotHeight: 1.h,
-                  dotWidth: 1.h,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
